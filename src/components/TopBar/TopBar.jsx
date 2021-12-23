@@ -52,7 +52,7 @@ function TopBar({ theme, toggleTheme, handleDrawerToggle }) {
 
           <ConnectMenu theme={theme} />
 
-          {/* <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} /> */}
+          <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />
         </Box>
       </Toolbar>
     </AppBar>

@@ -3,14 +3,18 @@ import { addresses, TOKEN_DECIMALS } from "../../constants";
 import { Link, SvgIcon, Popper, Button, Paper, Typography, Divider, Box, Fade, Slide } from "@material-ui/core";
 import { ReactComponent as InfoIcon } from "../../assets/icons/info-fill.svg";
 import { ReactComponent as ArrowUpIcon } from "../../assets/icons/arrow-up.svg";
-import { ReactComponent as sNOVATokenImg } from "../../assets/tokens/SNOVA.svg";
-import { ReactComponent as NOVATokenImg } from "../../assets/tokens/NOVA.svg";
+import { ReactComponent as shecTokenImg } from "../../assets/tokens/SHEC.svg";
+import { ReactComponent as hecTokenImg } from "../../assets/tokens/HEC.svg";
+import { ReactComponent as wshecTokenImg } from "../../assets/tokens/wsHEC.svg";
+import { NavLink } from "react-router-dom";
 
 import "./hecmenu.scss";
+// import { mim } from "src/helpers/AllBonds";
 import { useWeb3Context } from "../../hooks/web3Context";
 
 import NOVAImg from "src/assets/tokens/NOVA.png";
 import sNOVAImg from "src/assets/tokens/SNOVA.png";
+
 const addTokenToWallet = (tokenSymbol, tokenAddress) => async () => {
   if (window.ethereum) {
     const host = window.location.origin;
@@ -18,17 +22,21 @@ const addTokenToWallet = (tokenSymbol, tokenAddress) => async () => {
     let tokenPath, decimals;
     // if (tokenSymbol === "HEC") {
 
-    // } ? NOVAImg : sNOVAImg;
+    // } ? HecImg : SHecImg;
     switch (tokenSymbol) {
+      // case "wsHEC":
+      //   tokenPath = wsHecImg;
+      //   decimals = 18;
+      //   break;
       case "NOVA":
         tokenPath = NOVAImg;
         decimals = 9;
         break;
       default:
         tokenPath = sNOVAImg;
+        decimals = 9;
     }
     const imageURL = `${host}/${tokenPath}`;
-
     try {
       await window.ethereum.request({
         method: "wallet_watchAsset",
@@ -37,7 +45,7 @@ const addTokenToWallet = (tokenSymbol, tokenAddress) => async () => {
           options: {
             address: tokenAddress,
             symbol: tokenSymbol,
-            decimals: TOKEN_DECIMALS,
+            decimals: decimals,
             image: imageURL,
           },
         },
@@ -55,6 +63,10 @@ function HecMenu() {
 
   const networkID = chainID;
 
+  // const SHEC_ADDRESS = addresses[networkID].SHEC_ADDRESS;
+  // const WSHEC_ADDRESS = addresses[networkID].WSHEC_ADDRESS;
+  // const HEC_ADDRESS = addresses[networkID].HEC_ADDRESS;
+
   const SNOVA_ADDRESS = addresses[networkID].SNOVA_ADDRESS;
   const NOVA_ADDRESS = addresses[networkID].NOVA_ADDRESS;
   const USDC_ADDRESS = addresses[networkID].USDC_ADDRESS;
@@ -65,6 +77,7 @@ function HecMenu() {
 
   const open = Boolean(anchorEl);
   const id = "hec-popper";
+  // const mimAddress = mim.getAddressForReserve(networkID);
   return (
     <Box
       component="div"
@@ -96,7 +109,7 @@ function HecMenu() {
                   </Link>
 
                   {/* <Link
-                    href={`https://swap.spiritswap.finance/#/add/${USDC_ADDRESS}/${NOVA_ADDRESS}`}
+                    href={`https://swap.spiritswap.finance/#/add/${USDC_ADDRESS}/${HEC_ADDRESS}`}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -104,6 +117,12 @@ function HecMenu() {
                       <Typography align="left">
                         Buy on SpiritSwap <SvgIcon component={ArrowUpIcon} htmlColor="#A3A3A3" />
                       </Typography>
+                    </Button>
+                  </Link> */}
+
+                  {/* <Link component={NavLink} to="/wrap" style={{ textDecoration: "none" }}>
+                    <Button size="large" variant="contained" color="secondary" fullWidth>
+                      <Typography align="left">Wrap sHEC</Typography>
                     </Button>
                   </Link> */}
                 </Box>
@@ -115,7 +134,7 @@ function HecMenu() {
                     <Box display="flex" flexDirection="row" justifyContent="space-between">
                       <Button variant="contained" color="secondary" onClick={addTokenToWallet("NOVA", NOVA_ADDRESS)}>
                         <SvgIcon
-                          component={NOVATokenImg}
+                          component={NOVAImg}
                           viewBox="0 0 32 32"
                           style={{ height: "25px", width: "25px" }}
                         />
@@ -123,12 +142,20 @@ function HecMenu() {
                       </Button>
                       <Button variant="contained" color="secondary" onClick={addTokenToWallet("sNOVA", SNOVA_ADDRESS)}>
                         <SvgIcon
-                          component={sNOVATokenImg}
-                          viewBox="0 0 100 100"
+                          component={sNOVAImg}
+                          viewBox="0 0 32 32"
                           style={{ height: "25px", width: "25px" }}
                         />
                         <Typography variant="body1">sNOVA</Typography>
                       </Button>
+                      {/* <Button variant="contained" color="secondary" onClick={addTokenToWallet("wsHEC", WSHEC_ADDRESS)}>
+                        <SvgIcon
+                          component={wshecTokenImg}
+                          viewBox="0 0 32 32"
+                          style={{ height: "25px", width: "25px" }}
+                        />
+                        <Typography variant="body1">wsHEC</Typography>
+                      </Button> */}
                     </Box>
                   </Box>
                 ) : null}

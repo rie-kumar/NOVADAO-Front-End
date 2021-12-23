@@ -216,8 +216,8 @@ function Calculator() {
                                         <Typography>{isAppLoading ? <Skeleton width="80px" /> : <>${potentialReturn}</>}</Typography>
                                     </Box>
                                     <Box className="data-row">
-                                        <Typography>Potential number of Tesla Roadsters</Typography>
-                                        <Typography>{isAppLoading ? <Skeleton width="80px" /> : <>{Math.floor(Number(potentialReturn) / 220000)}</>}</Typography>
+                                        <Typography>Potential number of <a href="https://cosmonova.org/">Stars</a></Typography>
+                                        <Typography>{isAppLoading ? <Skeleton width="80px" /> : <>{Math.floor(Number(potentialReturn) / 399.90)}</>}</Typography>
                                     </Box>
                                 </Box>
                             </Box>

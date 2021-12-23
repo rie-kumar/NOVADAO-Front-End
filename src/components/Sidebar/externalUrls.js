@@ -2,7 +2,8 @@ import { ReactComponent as ForumIcon } from "../../assets/icons/forum.svg";
 import { ReactComponent as GovIcon } from "../../assets/icons/governance.svg";
 import { ReactComponent as DocsIcon } from "../../assets/icons/docs.svg";
 import { ReactComponent as TraderJoeIcon } from "../../assets/icons/traderjoe.svg";
-import { ReactComponent as SpiritSwapIcon } from "../../assets/icons/spiritswap.svg";
+// import { ReactComponent as SpookySwapIcon } from "../../assets/icons/spookyswap.svg";
+// import { ReactComponent as SpiritSwapIcon } from "../../assets/icons/spiritswap.svg";
 import { ReactComponent as FeedbackIcon } from "../../assets/icons/feedback.svg";
 import { SvgIcon } from "@material-ui/core";
 import { AccountBalanceOutlined, MonetizationOnOutlined } from "@material-ui/icons";
@@ -19,28 +20,23 @@ const externalUrls = [
   //   icon: <SvgIcon viewBox="0 0 155 172" color="primary" component={SpiritSwapIcon} />,
   // },
   // {
-  //   title: "Hector Lend",
+  //   title: "Hector Bank",
   //   label: "(Coming soon)",
   //   icon: <MonetizationOnOutlined viewBox="0 0 20 24" />,
   // },
-  {
-    title: "NOVA Bank",
-    label: "(Coming soon)",
-    icon: <AccountBalanceOutlined viewBox="0 0 20 24" />,
-  },
-  {
-    title: "NOVA Pro",
-    label: "(Coming soon)",
-    icon: <MonetizationOnOutlined viewBox="0 0 20 24" />,
-  },
   // {
-  //   title: "Governance",
-  //   url: "https://snapshot.org/#/hectordao.eth",
-  //   icon: <SvgIcon color="primary" component={GovIcon} />,
+  //   title: "Hector PRO",
+  //   label: "(Coming soon)",
+  //   icon: <AccountBalanceOutlined viewBox="0 0 20 24" />,
   // },
   {
+    title: "Governance",
+    url: "https://snapshot.org/#/hectordao.eth",
+    icon: <SvgIcon color="primary" component={GovIcon} />,
+  },
+  {
     title: "Docs",
-    url: "https://NOVAdao.gitbook.io/NOVAdao/NOVA-dao/introduction",
+    url: "https://docs.hectordao.com",
     icon: <SvgIcon color="primary" component={DocsIcon} />,
   },
 ];

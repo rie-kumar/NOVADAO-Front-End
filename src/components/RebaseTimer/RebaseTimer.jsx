@@ -14,7 +14,6 @@ function RebaseTimer() {
   const SECONDS_TO_REFRESH = 60;
   const [secondsToRebase, setSecondsToRebase] = useState(0);
   const [rebaseString, setRebaseString] = useState("");
-  // 
   const [secondsToRefresh, setSecondsToRefresh] = useState(SECONDS_TO_REFRESH);
 
   const currentBlock = useSelector(state => {

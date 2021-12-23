@@ -6,24 +6,25 @@ import commonSettings from "./global.js";
 // then set the values in darkTheme using the global color variables
 
 const darkTheme = {
-  color: "#FFFFFF",
-  gold: "#004ffe",
+  color: "#FCFCFC",
+  gold: "#FF9900",
   gray: "#A3A3A3",
-  textHighlightColor: "#FF5757",  // ychm menu hover color
-  backgroundColor: "#FF5757",
-  background: '#000000',
-  paperBg: "#000000",   // ychm menubar bgcolor
+  textHighlightColor: "#F4D092",
+  backgroundColor: "#353E55df",
+  background: `#fff
+    `,
+  paperBg: "#2b3040",
   modalBg: "#24242699",
   popoverBg: "rgba(54, 56, 64, 0.99)",
   menuBg: "#36384080",
   backdropBg: "rgba(54, 56, 64, 0.5)",
-  largeTextColor: "#84a0df",
+  largeTextColor: "#F4D092",
   activeLinkColor: "#F5DDB4",
   activeLinkSvgColor:
     "brightness(0) saturate(100%) invert(84%) sepia(49%) saturate(307%) hue-rotate(326deg) brightness(106%) contrast(92%)",
-  primaryButtonColor: "#000000",
-  primaryButtonBG: "#84a0df",
-  primaryButtonHoverBG: "#84a0df",
+  primaryButtonColor: "#333333",
+  primaryButtonBG: "#F4D092",
+  primaryButtonHoverBG: "#EDD8B4",
   secondaryButtonHoverBG: "rgba(54, 56, 64, 1)",
   outlinedPrimaryButtonHoverBG: "#F8CC82",
   outlinedPrimaryButtonHoverColor: "#333333",

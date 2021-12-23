@@ -41,6 +41,7 @@ export const loadAppDetails = createAsyncThunk(
       treasuryMarketValue
       nextEpochRebase
       nextDistributedHec
+      treasuryInvestments
     }
   }
   `;
@@ -61,6 +62,7 @@ export const loadAppDetails = createAsyncThunk(
       HectorStakingv2,
       provider,
     );
+    // NOTE (appleseed): marketPrice from Graph was delayed, so get CoinGecko price
     let marketPrice;
     try {
       const originalPromiseResult = await dispatch(
@@ -74,22 +76,21 @@ export const loadAppDetails = createAsyncThunk(
     }
     const sHecMainContract = new ethers.Contract(addresses[networkID].SNOVA_ADDRESS as string, sHECv2, provider);
     const hecContract = new ethers.Contract(addresses[networkID].NOVA_ADDRESS as string, ierc20Abi, provider);
-    const hecBalance = await hecContract.balanceOf(addresses[networkID].STAKING_ADDRESS);
-    const oldhecBalance = await hecContract.balanceOf(addresses[networkID].OLD_STAKING_ADDRESS);
     const oldsHecContract = new ethers.Contract(
       addresses[networkID].OLD_SNOVA_ADDRESS as string,
       [circulatingSupply],
       provider,
     );
     const old_circ = await oldsHecContract.circulatingSupply();
-    const stakingTVL = ((hecBalance.toNumber() + oldhecBalance.toNumber())* marketPrice) / 1000000000;
+    const stakingTVL = parseFloat(graphData.data.protocolMetrics[0].totalValueLocked);
     const circ = await sHecMainContract.circulatingSupply();
-    const circSupply = circ / 1000000000 + old_circ / 1000000000;
+    const circSupply = parseFloat(graphData.data.protocolMetrics[0].hecCirculatingSupply);
     const total = await hecContract.totalSupply();
     const totalSupply = total / 1000000000;
     const marketCap = marketPrice * circSupply;
     const marketPriceString = marketPrice ? "$" + marketPrice.toFixed(2) : "";
-    document.title = `NOVADAO - ${marketPriceString}`;
+    const investments = parseFloat(graphData.data.protocolMetrics[0].treasuryInvestments);
+    document.title = `NovaDAO - ${marketPriceString}`;
     if (!provider) {
       console.error("failed to connect to provider, please connect your wallet");
       return {
@@ -106,14 +107,14 @@ export const loadAppDetails = createAsyncThunk(
     const epoch = await stakingContract.epoch();
     const old_epoch = await old_stakingContract.epoch();
     const stakingReward = epoch.distribute;
-    const stakingRebase = stakingReward / circ;
     const old_stakingReward = old_epoch.distribute;
+    const stakingRebase = stakingReward / circ;
     const old_stakingRebase = old_stakingReward / old_circ;
     const fiveDayRate = Math.pow(1 + stakingRebase, 5 * 3) - 1;
     const old_fiveDayRate = Math.pow(1 + old_stakingRebase, 5 * 3) - 1;
     const stakingAPY = Math.pow(1 + stakingRebase, 365 * 3) - 1;
     // Current index
-    const currentIndex = (await stakingContract.index()).toNumber() + 66333368;
+    const currentIndex = await stakingContract.index();
     const endBlock = epoch.endBlock;
 
     return {
@@ -130,6 +131,7 @@ export const loadAppDetails = createAsyncThunk(
       circSupply,
       totalSupply,
       endBlock,
+      investments,
     } as IAppData;
   },
 );
@@ -174,7 +176,7 @@ export const findOrLoadMarketPrice = createAsyncThunk(
 );
 
 /**
- * - fetches the NOVA price from CoinGecko (via getTokenPrice)
+ * - fetches the HEC price from CoinGecko (via getTokenPrice)
  * - falls back to fetch marketPrice from hec-dai contract
  * - updates the App.slice when it runs
  */
@@ -204,6 +206,7 @@ interface IAppData {
   readonly totalSupply: number;
   readonly treasuryBalance?: number;
   readonly endBlock?: number;
+  readonly investments?: number;
 }
 
 const appSlice = createSlice({

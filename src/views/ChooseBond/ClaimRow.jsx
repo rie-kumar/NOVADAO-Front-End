@@ -11,10 +11,12 @@ import "./choosebond.scss";
 import { Skeleton } from "@material-ui/lab";
 import { useWeb3Context, useBonds } from "src/hooks";
 import { isPendingTxn, txnButtonTextGeneralPending } from "src/slices/PendingTxnsSlice";
+// import { hec_dai, mim4, usdc4, dai4 } from "src/helpers/AllBonds";
 
 export function ClaimBondTableData({ userBond }) {
   const dispatch = useDispatch();
   let { bonds } = useBonds();
+  bonds = bonds.concat([hec_dai, mim4, usdc4, dai4]);
   const { address, chainID, provider } = useWeb3Context();
 
   const bond = userBond[1];
@@ -49,7 +51,7 @@ export function ClaimBondTableData({ userBond }) {
       await dispatch(redeemBond({ address, bond: currentBond, networkID: chainID, provider, autostake }));
     }
   }
- console.log("claimable", displayName, bond.pendingPayout)
+
   return (
     <TableRow id={`${bondName}--claim`}>
       <TableCell align="left" className="bond-name-cell">
@@ -87,6 +89,7 @@ export function ClaimBondTableData({ userBond }) {
 export function ClaimBondCardData({ userBond }) {
   const dispatch = useDispatch();
   let { bonds } = useBonds();
+  bonds = bonds.concat([hec_dai, mim4, usdc4, dai4]);
   const { address, chainID, provider } = useWeb3Context();
 
   const bond = userBond[1];

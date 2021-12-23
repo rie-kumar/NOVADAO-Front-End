@@ -1,14 +1,15 @@
 import { ethers, BigNumber } from "ethers";
-import { addresses } from "../constants";
+import { addresses, messages } from "../constants";
 import { abi as ierc20Abi } from "../abi/IERC20.json";
 import { abi as HectorStaking } from "../abi/HectorStakingv2.json";
 import { abi as StakingHelper } from "../abi/StakingHelper.json";
 import { clearPendingTxn, fetchPendingTxns, getStakingTypeText } from "./PendingTxnsSlice";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { fetchAccountSuccess, getBalances, loadAccountDetails } from "./AccountSlice";
-import { error, info } from "../slices/MessagesSlice";
+import { fetchAccountSuccess, loadAccountDetails } from "./AccountSlice";
+import { error, info, success } from "../slices/MessagesSlice";
 import { IActionValueAsyncThunk, IChangeApprovalAsyncThunk, IJsonRPCError } from "./interfaces";
-import { segmentUA } from "../helpers/userAnalyticHelpers";
+import { metamaskErrorWrap } from "src/helpers/MetamaskErrorWrap";
+import { sleep } from "../helpers/Sleep"
 
 interface IUAData {
   address: string;
@@ -24,9 +25,9 @@ function alreadyApprovedToken(token: string, stakeAllowance: BigNumber, unstakeA
   let applicableAllowance = bigZero;
 
   // determine which allowance to check
-  if (token === "hec") {
+  if (token === "nova") {
     applicableAllowance = stakeAllowance;
-  } else if (token === "shec") {
+  } else if (token === "snova") {
     applicableAllowance = unstakeAllowance;
   }
 
@@ -68,7 +69,7 @@ export const changeApproval = createAsyncThunk(
     }
 
     try {
-      if (token === "hec") {
+      if (token === "nova") {
         // won't run if stakeAllowance > 0
         approveTx = await hecContract.approve(
           addresses[networkID].STAKING_HELPER_ADDRESS,
@@ -86,19 +87,22 @@ export const changeApproval = createAsyncThunk(
         );
       }
 
-      const text = "Approve " + (token === "hec" ? "Staking" : "Unstaking");
-      const pendingTxnType = token === "hec" ? "approve_staking" : "approve_unstaking";
+      const text = "Approve " + (token === "nova" ? "Staking" : "Unstaking");
+      const pendingTxnType = token === "nova" ? "approve_staking" : "approve_unstaking";
       dispatch(fetchPendingTxns({ txnHash: approveTx.hash, text, type: pendingTxnType }));
 
       await approveTx.wait();
-    } catch (e: unknown) {
-      dispatch(error((e as IJsonRPCError).message));
-      return;
+      dispatch(success(messages.tx_successfully_send));
+    } catch (e: any) {``
+      // dispatch(error((e as IJsonRPCError).message));
+      return metamaskErrorWrap(e, dispatch);
     } finally {
       if (approveTx) {
         dispatch(clearPendingTxn(approveTx.hash));
       }
     }
+
+    await sleep(2);
 
     // go get fresh allowances
     stakeAllowance = await hecContract.allowance(address, addresses[networkID].STAKING_HELPER_ADDRESS);
@@ -138,6 +142,7 @@ export const changeStake = createAsyncThunk(
       staking = new ethers.Contract(addresses[networkID].STAKING_ADDRESS as string, HectorStaking, signer);
       stakingHelper = new ethers.Contract(addresses[networkID].STAKING_HELPER_ADDRESS as string, StakingHelper, signer);
     }
+
     let stakeTx;
     let uaData: IUAData = {
       address: address,
@@ -160,33 +165,20 @@ export const changeStake = createAsyncThunk(
       dispatch(fetchPendingTxns({ txnHash: stakeTx.hash, text: getStakingTypeText(action), type: pendingTxnType }));
       callback?.();
       await stakeTx.wait();
-      await new Promise<void>((resolve, reject) => {
-        setTimeout(async () => {
-          try {
-            await dispatch(loadAccountDetails({ networkID, address, provider }));
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        }, 5000);
-      });
-    } catch (e: unknown) {
-      uaData.approved = false;
-      const rpcError = e as IJsonRPCError;
-      if (rpcError.code === -32603 && rpcError.message.indexOf("ds-math-sub-underflow") >= 0) {
-        dispatch(
-          error("You may be trying to stake more than your balance! Error code: 32603. Message: ds-math-sub-underflow"),
-        );
-      } else {
-        dispatch(error(rpcError.message));
-      }
-      return;
+      dispatch(success(messages.tx_successfully_send));
+    } catch (e: any) {
+      return metamaskErrorWrap(e, dispatch);
     } finally {
       if (stakeTx) {
-        // segmentUA(uaData);
 
         dispatch(clearPendingTxn(stakeTx.hash));
       }
     }
+    await sleep(7);
+    dispatch(info(messages.your_balance_update_soon));
+    await sleep(15);
+    await dispatch(loadAccountDetails({ address, networkID, provider }));
+    dispatch(info(messages.your_balance_updated));
+    return;
   },
 );

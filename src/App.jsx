@@ -2,6 +2,7 @@ import { ThemeProvider } from "@material-ui/core/styles";
 import { useEffect, useState, useCallback } from "react";
 import { Route, Redirect, Switch, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import classNames from "classnames";
 import { useMediaQuery } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
@@ -31,7 +32,9 @@ import { light as lightTheme } from "./themes/light.js";
 import { girth as gTheme } from "./themes/girth.js";
 import { v4 as uuidv4 } from "uuid";
 import "./style.scss";
-import { NOVA_mim } from "./helpers/AllBonds";
+import { NOVA_mim } from "./helpers/AllBonds"
+// import { hec_dai, mim4, usdc4, dai4 } from "./helpers/AllBonds";
+// import Wrap from "./views/Wrap/Wrap";
 import Calculator from "./views/Calculator/index";
 
 const drawerWidth = 280;
@@ -89,7 +92,8 @@ function App() {
   const isAppLoading = useSelector(state => state.app.loading);
   const isAppLoaded = useSelector(state => typeof state.app.marketPrice != "undefined"); // Hacky way of determining if we were able to load app Details.
   let { bonds } = useBonds();
-  // bonds = bonds.concat(NOVA_mim);
+  // bonds = bonds.concat([hec_dai, usdc4, mim4, dai4]);
+  bonds = bonds.concat(NOVA_mim);
   async function loadDetails(whichDetails) {
     // NOTE (unbanksy): If you encounter the following error:
     // Unhandled Rejection (Error): call revert exception (method="balanceOf(address)", errorArgs=null, errorName=null, errorSignature=null, reason=null, code=CALL_EXCEPTION, version=abi/5.4.0)
@@ -148,7 +152,7 @@ function App() {
     // We want to ensure that we are storing the UTM parameters for later, even if the user follows links
     storeQueryParameters();
     if (shouldTriggerSafetyCheck()) {
-      dispatch(info("Safety Check: Always verify you're on NOVAdao.co!"));
+      dispatch(info("Safety Check: Always verify you're on daoverse.com!"));
     }
   }, []);
 
@@ -186,18 +190,16 @@ function App() {
   }, [location]);
 
   useEffect(() => {
-    if (connected) {
-      const updateAppDetailsInterval = setInterval(() => {
-        dispatch(loadAppDetails({ networkID: chainID, provider }));
-        bonds.map(bond => {
-          dispatch(calcBondDetails({ bond, value: null, provider, networkID: chainID }));
-        });
-      }, 1000 * 60);
-      return () => {
-        clearInterval(updateAppDetailsInterval);
-      };
-    }
-  }, [connected]);
+    const updateAppDetailsInterval = setInterval(() => {
+      dispatch(loadAppDetails({ networkID: chainID, provider }));
+      bonds.map(bond => {
+        dispatch(calcBondDetails({ bond, value: null, provider, networkID: chainID }));
+      });
+    }, 1000 * 30);
+    return () => {
+      clearInterval(updateAppDetailsInterval);
+    };
+  }, []);
 
   useEffect(() => {
     if (walletChecked) {
@@ -206,17 +208,23 @@ function App() {
         bonds.map(bond => {
           dispatch(calculateUserBondDetails({ address, bond, provider, networkID: chainID }));
         });
-      }, 1000 * 60 * 10);
+      }, 1000 * 30 * 10);
       return () => {
         clearInterval(updateAccountDetailInterval);
       };
     }
   }, [walletChecked]);
+
   return (
     <ThemeProvider theme={themeMode}>
       <CssBaseline />
       {/* {isAppLoading && <LoadingSplash />} */}
-      <div className={`app ${isSmallerScreen && "tablet"} ${isSmallScreen && "mobile"} ${theme}`}>
+      <div
+        className={classNames("app", theme, {
+          tablet: isSmallerScreen && !isSmallScreen,
+          mobile: isSmallScreen,
+        })}
+      >
         <Messages />
         <TopBar theme={theme} toggleTheme={toggleTheme} handleDrawerToggle={handleDrawerToggle} />
         <nav className={classes.drawer}>
@@ -226,6 +234,7 @@ function App() {
             <Sidebar />
           )}
         </nav>
+
         <div className={`${classes.content} ${isSmallerScreen && classes.contentShift}`}>
           <Switch>
             <Route exact path="/dashboard">
@@ -239,6 +248,12 @@ function App() {
             <Route path="/stake">
               <Stake />
             </Route>
+            {/* <Route path="/wrap">
+              <Wrap />
+            </Route> */}
+            <Route path="/calculator">
+              <Calculator />
+            </Route>
 
             <Route path="/bonds">
               {bonds.map(bond => {
@@ -250,9 +265,6 @@ function App() {
               })}
               <ChooseBond />
             </Route>
-            {/* <Route path="/calculator">
-              <Calculator />
-            </Route> */}
 
             <Route component={NotFound} />
           </Switch>

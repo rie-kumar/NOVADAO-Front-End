@@ -7,7 +7,6 @@ import { NavLink } from "react-router-dom";
 import "./choosebond.scss";
 import { Skeleton } from "@material-ui/lab";
 import useBonds from "src/hooks/Bonds";
-import useTheme from "src/hooks/useTheme";
 
 export function BondDataCard({ bond }) {
   const { loading } = useBonds();
@@ -25,11 +24,6 @@ export function BondDataCard({ bond }) {
     // displayName += " (4, 4)";
     isFour = true;
     discount += stakingRebasePercentage;
-  }
-  const [theme] = useTheme();
-  let textColor = "#fff";
-  if (theme === "light") {
-    textColor = "#004ffe";
   }
   return (
     <Slide direction="up" in={true}>
@@ -63,7 +57,7 @@ export function BondDataCard({ bond }) {
           <Typography style={{ textAlign: "right" }}>
             {isBondLoading ? <Skeleton width="50px" /> : isSoldOut ? "--" : `${trim(discount, 2)}%`}
             {isFour && !isBondLoading && (
-              <Typography variant="body2" style={{ fontSize: "11px", paddingTop: "4px" }} color={textColor}>
+              <Typography variant="body2" style={{ color: "#ff9900", fontSize: "11px", paddingTop: "4px" }}>
                 ({trim(stakingRebasePercentage, 2)}% from Rebase INCLUDED)
               </Typography>
             )}
@@ -122,11 +116,6 @@ export function BondTableData({ bond }) {
     isFour = true;
     discount += stakingRebasePercentage;
   }
-  const [theme] = useTheme();
-  let textColor = "#fff";
-  if (theme === "light") {
-    textColor = "#004ffe";
-  }
   return (
     <TableRow id={`${bond.name}--bond`}>
       <TableCell align="left" className="bond-name-cell">
@@ -158,7 +147,7 @@ export function BondTableData({ bond }) {
       <TableCell align="left">
         {isSoldOut ? "--" : <>{isBondLoading ? <Skeleton /> : `${trim(discount, 2)}%`}</>}
         {isFour && !isBondLoading && (
-          <Typography variant="body2" style={{ fontSize: "11px", paddingTop: "4px" }} color={textColor}>
+          <Typography variant="body2" style={{ color: "#ff9900", fontSize: "11px", paddingTop: "4px" }}>
             ({trim(stakingRebasePercentage, 2)}% from Rebase INCLUDED)
           </Typography>
         )}

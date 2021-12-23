@@ -15,18 +15,17 @@ import {
   Typography,
   Zoom,
 } from "@material-ui/core";
-import NewReleases from "@material-ui/icons/NewReleases";
 import RebaseTimer from "../../components/RebaseTimer/RebaseTimer";
 import TabPanel from "../../components/TabPanel";
 import { trim } from "../../helpers";
 import { changeApproval, changeStake } from "../../slices/StakeThunk";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
 import "./stake.scss";
 import { useWeb3Context } from "src/hooks/web3Context";
 import { isPendingTxn, txnButtonText } from "src/slices/PendingTxnsSlice";
 import { Skeleton } from "@material-ui/lab";
-import { error } from "../../slices/MessagesSlice";
+import { error, info } from "../../slices/MessagesSlice";
 import { ethers, BigNumber } from "ethers";
+
 
 function a11yProps(index) {
   return {
@@ -123,11 +122,11 @@ function Stake() {
     // 1st catch if quantity > balance
     let gweiValue = ethers.utils.parseUnits(value, "gwei");
     if (action === "stake" && gweiValue.gt(ethers.utils.parseUnits(hecBalance, "gwei"))) {
-      return dispatch(error("You cannot stake more than your NOVA balance."));
+      return dispatch(error("You cannot stake more than your HEC balance."));
     }
 
     if (action === "unstake" && gweiValue.gt(ethers.utils.parseUnits(unstakedVal, "gwei"))) {
-      return dispatch(error("You cannot unstake more than your sNOVA balance."));
+      return dispatch(error("You cannot unstake more than your sHEC balance."));
     }
     await dispatch(
       changeStake({
@@ -194,7 +193,7 @@ function Stake() {
             <Grid container direction="column" spacing={2}>
               <Grid item>
                 <div className="card-header">
-                  <Typography variant="h5">Single Stake v2(3, 3)</Typography>
+                  <Typography variant="h5">Single Stake v2 (3, 3)</Typography>
                   <RebaseTimer />
                 </div>
               </Grid>
@@ -209,7 +208,7 @@ function Stake() {
                         </Typography>
                         <Typography variant="h4">
                           {stakingAPY ? (
-                            <>{new Intl.NumberFormat("en-US").format(stakingAPY * 100)}%</>
+                            <>{new Intl.NumberFormat("en-US").format(trimmedStakingAPY)}%</>
                           ) : (
                             <Skeleton width="150px" />
                           )}
@@ -243,7 +242,7 @@ function Stake() {
                           Current Index
                         </Typography>
                         <Typography variant="h4">
-                          {currentIndex ? <>{trim(currentIndex, 2)} NOVA</> : <Skeleton width="150px" />}
+                          {currentIndex ? <>{trim(currentIndex, 2)} HEC</> : <Skeleton width="150px" />}
                         </Typography>
                       </div>
                     </Grid>
@@ -257,7 +256,7 @@ function Stake() {
                     <div className="wallet-menu" id="wallet-menu">
                       {modalButton}
                     </div>
-                    <Typography variant="h6">Connect your wallet to stake NOVA</Typography>
+                    <Typography variant="h6">Connect your wallet to stake HEC</Typography>
                   </div>
                 ) : (
                   <>
@@ -283,15 +282,15 @@ function Stake() {
                               <Typography variant="body1" className="stake-note" color="textSecondary">
                                 {view === 0 ? (
                                   <>
-                                    First time staking <b>NOVA</b>?
+                                    First time staking <b>HEC</b>?
                                     <br />
-                                    Please approve NOVA Dao to use your <b>NOVA</b> for staking.
+                                    Please approve Hector Dao to use your <b>HEC</b> for staking.
                                   </>
                                 ) : (
                                   <>
-                                    First time unstaking <b>sNOVA</b>?
+                                    First time unstaking <b>sHEC</b>?
                                     <br />
-                                    Please approve NOVA Dao to use your <b>sNOVA</b> for unstaking.
+                                    Please approve Hector Dao to use your <b>sHEC</b> for unstaking.
                                   </>
                                 )}
                               </Typography>
@@ -334,7 +333,7 @@ function Stake() {
                                 onChangeStake("stake", false);
                               }}
                             >
-                              {txnButtonText(pendingTransactions, "staking", "Stake NOVA")}
+                              {txnButtonText(pendingTransactions, "staking", "Stake HEC")}
                             </Button>
                           ) : (
                             <Button
@@ -363,7 +362,7 @@ function Stake() {
                                 onChangeStake("unstake", false);
                               }}
                             >
-                              {txnButtonText(pendingTransactions, "unstaking", "Unstake NOVA")}
+                              {txnButtonText(pendingTransactions, "unstaking", "Unstake HEC")}
                             </Button>
                           ) : (
                             <Button
@@ -386,21 +385,21 @@ function Stake() {
                       <div className="data-row">
                         <Typography variant="body1">Your Balance</Typography>
                         <Typography variant="body1">
-                          {isAppLoading ? <Skeleton width="80px" /> : <>{trim(hecBalance, 4)} NOVA</>}
+                          {isAppLoading ? <Skeleton width="80px" /> : <>{trim(hecBalance, 4)} HEC</>}
                         </Typography>
                       </div>
 
                       <div className="data-row">
                         <Typography variant="body1">Your Staked Balance</Typography>
                         <Typography variant="body1">
-                          {isAppLoading ? <Skeleton width="80px" /> : <>{trimmedBalance} sNOVA</>}
+                          {isAppLoading ? <Skeleton width="80px" /> : <>{trimmedBalance} sHEC</>}
                         </Typography>
                       </div>
 
                       <div className="data-row">
                         <Typography variant="body1">Next Reward Amount</Typography>
                         <Typography variant="body1">
-                          {isAppLoading ? <Skeleton width="80px" /> : <>{nextRewardValue} sNOVA</>}
+                          {isAppLoading ? <Skeleton width="80px" /> : <>{nextRewardValue} sHEC</>}
                         </Typography>
                       </div>
 
@@ -442,7 +441,7 @@ function Stake() {
                       <div className="wallet-menu" id="wallet-menu">
                         {modalButton}
                       </div>
-                      <Typography variant="h6">Connect your wallet to stake NOVA</Typography>
+                      <Typography variant="h6">Connect your wallet to stake HEC</Typography>
                     </div>
                   ) : (
                     <>
@@ -457,9 +456,9 @@ function Stake() {
                               <Box className="help-text">
                                 <Typography variant="body1" className="stake-note" color="textSecondary">
                                   <>
-                                    First time unstaking <b>sNOVA</b>?
+                                    First time unstaking <b>sHEC</b>?
                                     <br />
-                                    Please approve NOVA Dao to use your <b>sNOVA</b> for unstaking.
+                                    Please approve Hector Dao to use your <b>sHEC</b> for unstaking.
                                   </>
                                 </Typography>
                               </Box>
@@ -501,7 +500,7 @@ function Stake() {
                                   onChangeStake("unstake", true);
                                 }}
                               >
-                                {txnButtonText(pendingTransactions, "unstaking", "Unstake NOVA")}
+                                {txnButtonText(pendingTransactions, "unstaking", "Unstake HEC")}
                               </Button>
                             ) : (
                               <Button
@@ -524,14 +523,14 @@ function Stake() {
                         <div className="data-row">
                           <Typography variant="body1">Your Staked Balance</Typography>
                           <Typography variant="body1">
-                            {isAppLoading ? <Skeleton width="80px" /> : <>{oldtrimmedBalance} sNOVA</>}
+                            {isAppLoading ? <Skeleton width="80px" /> : <>{oldtrimmedBalance} sHEC</>}
                           </Typography>
                         </div>
 
                         <div className="data-row">
                           <Typography variant="body1">Next Reward Amount</Typography>
                           <Typography variant="body1">
-                            {isAppLoading ? <Skeleton width="80px" /> : <>{oldnextRewardValue} sNOVA</>}
+                            {isAppLoading ? <Skeleton width="80px" /> : <>{oldnextRewardValue} sHEC</>}
                           </Typography>
                         </div>
 

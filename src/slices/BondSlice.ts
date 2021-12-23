@@ -1,11 +1,12 @@
 import { ethers, BigNumber } from "ethers";
+import { useSelector } from "react-redux";
 import { contractForRedeemHelper } from "../helpers";
-import { getBalances, calculateUserBondDetails, loadAccountDetails } from "./AccountSlice";
+import { calculateUserBondDetails, loadAccountDetails } from "./AccountSlice";
 import { findOrLoadMarketPrice } from "./AppSlice";
-import { error, info } from "./MessagesSlice";
+import { error, info, success } from "./MessagesSlice";
 import { clearPendingTxn, fetchPendingTxns } from "./PendingTxnsSlice";
 import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit";
-import { getBondCalculator, getBondCalculator1 } from "src/helpers/BondCalculator";
+import { getBondCalculator, getBondCalculator1, getgOHMBondCalculator } from "src/helpers/BondCalculator";
 import { RootState } from "src/store";
 import {
   IApproveBondAsyncThunk,
@@ -15,7 +16,9 @@ import {
   IRedeemAllBondsAsyncThunk,
   IRedeemBondAsyncThunk,
 } from "./interfaces";
-import { segmentUA } from "../helpers/userAnalyticHelpers";
+import { messages } from "src/constants";
+import { sleep } from "src/helpers/Sleep";
+import { metamaskErrorWrap } from "src/helpers/MetamaskErrorWrap";
 
 export const changeApproval = createAsyncThunk(
   "bonding/changeApproval",
@@ -49,12 +52,13 @@ export const changeApproval = createAsyncThunk(
         }),
       );
       await approveTx.wait();
-    } catch (e: unknown) {
-      dispatch(error((e as IJsonRPCError).message));
+      dispatch(success(messages.tx_successfully_send));
+    } catch (e: any) {
+      return metamaskErrorWrap(e, dispatch);
     } finally {
       if (approveTx) {
-        dispatch(clearPendingTxn(approveTx.hash));
-        dispatch(calculateUserBondDetails({ address, bond, networkID, provider }));
+        await dispatch(clearPendingTxn(approveTx.hash));
+        await dispatch(calculateUserBondDetails({ address, bond, networkID, provider }));
       }
     }
   },
@@ -86,10 +90,16 @@ export const calcBondDetails = createAsyncThunk(
       valuation = 0,
       bondQuote = 0;
     const bondContract = bond.getContractForBond(networkID, provider);
-    
     // const bondCalcContract = getBondCalculator(networkID, provider);
     let bondCalcContract;
-    bondCalcContract = getBondCalculator(networkID, provider);
+    if (bond.name == "hec_dai_lp_v1") {
+      bondCalcContract = getBondCalculator(networkID, provider);
+    } else {
+      bondCalcContract = getBondCalculator1(networkID, provider);
+    }
+    if (bond.name == "gohmlp" || bond.name == "gohmlp4") {
+      bondCalcContract = getgOHMBondCalculator(networkID, provider);
+    }
 
     const terms = await bondContract.terms();
     const maxBondPrice = await bondContract.maxPayout();
@@ -114,13 +124,10 @@ export const calcBondDetails = createAsyncThunk(
 
     try {
       bondPrice = await bondContract.bondPriceInUSD();
-      // bondDiscount = (marketPrice * Math.pow(10, 9) - bondPrice) / bondPrice; // 1 - bondPrice / (bondPrice * Math.pow(10, 9));
       bondDiscount = (marketPrice * Math.pow(10, 18) - bondPrice) / bondPrice; // 1 - bondPrice / (bondPrice * Math.pow(10, 9));
     } catch (e) {
       console.log("error getting bondPriceInUSD", e);
     }
-
-    
 
     if (Number(value) === 0) {
       // if inputValue is 0 avoid the bondQuote calls
@@ -168,8 +175,9 @@ export const calcBondDetails = createAsyncThunk(
     if (isSoldOut) {
       bondDiscount = -0.1;
     }
-
-    
+    // if (bond.name == "gohmlp4") {
+    //   bondQuote = bondQuote * 100;
+    // }
 
     return {
       bond: bond.name,
@@ -215,7 +223,6 @@ export const bondAsset = createAsyncThunk(
       txHash: null,
     };
     try {
-      console.log("debug", valueInWei.toString(), maxPremium.toString(), depositorAddress.toString());
       bondTx = await bondContract.deposit(valueInWei, maxPremium, depositorAddress);
 
       dispatch(
@@ -223,17 +230,16 @@ export const bondAsset = createAsyncThunk(
       );
       uaData.txHash = bondTx.hash;
       await bondTx.wait();
+      dispatch(success(messages.tx_successfully_send));
+      await sleep(10);
+      dispatch(info(messages.your_balance_update_soon));
       // TODO: it may make more sense to only have it in the finally.
       // UX preference (show pending after txn complete or after balance updated)
-
-      dispatch(calculateUserBondDetails({ address, bond, networkID, provider }));
-    } catch (e: unknown) {
-      const rpcError = e as IJsonRPCError;
-      if (rpcError.code === -32603 && rpcError.message.indexOf("ds-math-sub-underflow") >= 0) {
-        dispatch(
-          error("You may be trying to bond more than your balance! Error code: 32603. Message: ds-math-sub-underflow"),
-        );
-      } else dispatch(error(rpcError.message));
+      await sleep(10);
+      await dispatch(calculateUserBondDetails({ address, bond, networkID, provider }));
+      dispatch(info(messages.your_balance_updated));
+    } catch (e: any) {
+      return metamaskErrorWrap(e, dispatch);
     } finally {
       if (bondTx) {
         // segmentUA(uaData);
@@ -263,7 +269,6 @@ export const redeemBond = createAsyncThunk(
       approved: true,
       txHash: null,
     };
-    console.log("debug redeem", address, bondContract);
     try {
       redeemTx = await bondContract.redeem(address, autostake === true);
       const pendingTxnType = "redeem_bond_" + bond + (autostake === true ? "_autostake" : "");
@@ -273,12 +278,15 @@ export const redeemBond = createAsyncThunk(
       );
 
       await redeemTx.wait();
+      dispatch(success(messages.tx_successfully_send));
+      await sleep(10);
+      dispatch(info(messages.your_balance_update_soon))
+      await sleep(10);
       await dispatch(calculateUserBondDetails({ address, bond, networkID, provider }));
-
-      dispatch(getBalances({ address, networkID, provider }));
-    } catch (e: unknown) {
-      uaData.approved = false;
-      dispatch(error((e as IJsonRPCError).message));
+      await dispatch(loadAccountDetails({ address, networkID, provider }));
+      dispatch(info(messages.your_balance_updated));
+    } catch (e: any) {
+      return metamaskErrorWrap(e, dispatch);
     } finally {
       if (redeemTx) {
         // segmentUA(uaData);
@@ -316,7 +324,7 @@ export const redeemAllBonds = createAsyncThunk(
         bonds && bonds.map(bond => dispatch(calculateUserBondDetails({ address, bond, networkID, provider }))),
       );
 
-      dispatch(getBalances({ address, networkID, provider }));
+      dispatch(loadAccountDetails({ address, networkID, provider }));
     } catch (e: unknown) {
       dispatch(error((e as IJsonRPCError).message));
     } finally {

@@ -43,15 +43,27 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
     return prettifySeconds(seconds, "day");
   };
 
+  const stakingRebase = useSelector(state => {
+    return state.app.stakingRebase;
+  });
+  const stakingRebasePercentage = stakingRebase * 1200;
+  let discount = bond.bondDiscount * 100;
   async function onBond() {
     if (quantity === "") {
       dispatch(error("Please enter a value!"));
     } else if (isNaN(quantity)) {
       dispatch(error("Please enter a valid value!"));
     } else if (bond.interestDue > 0 || bond.pendingPayout > 0) {
-      const shouldProceed = window.confirm(
-        "You have an existing bond. Bonding will reset your vesting period and forfeit rewards. We recommend claiming rewards first or using a fresh wallet. Do you still want to proceed?",
-      );
+      let shouldProceed;
+      if (bond.isFour) {
+        shouldProceed = window.confirm(
+          "You have an existing bond. Bonding will reset your vesting period. We recommend claiming rewards first or using a fresh wallet. Do you still want to proceed?",
+        );
+      } else {
+        shouldProceed = window.confirm(
+          "You have an existing bond. Bonding will reset your vesting period and forfeit rewards. We recommend claiming rewards first or using a fresh wallet. Do you still want to proceed?",
+        );
+      }
       if (shouldProceed) {
         await dispatch(
           bondAsset({
@@ -96,9 +108,6 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
       maxQ = bond.maxBondPrice * bond.bondPrice.toString();
     } else {
       maxQ = bond.balance;
-      // if (bond.name == "hec_usdc_lp" || bond.isFour) {
-      //   maxQ = (parseFloat(maxQ) - 0.0000000000005).toFixed(14);
-      // }
     }
     if (maxQ < 0) {
       maxQ = 0;
@@ -135,7 +144,8 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
   const isAllowanceDataLoading = bond.allowance == null;
 
   let balance = trim(bond.balance, 4);
-  if (bond.name == "hec_usdc_lp") {
+  // if (bond.name == "hec_usdc_lp" || bond.name == "usdc_lp_4" || bond.name == "gohmlp" || bond.name == "gohmlp4") {
+  if (bond.name == "nova_mim_lp") {
     balance = new Intl.NumberFormat("en-US", { notation: "scientific" }).format(bond.balance);
   }
   let reward;
@@ -143,6 +153,7 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
   if (bond.isFour) {
     reward = "sNOVA";
     displayName = bond.displayName + " (4, 4)";
+    discount += stakingRebasePercentage;
   } else {
     reward = "NOVA";
     displayName = bond.displayName;
@@ -163,7 +174,7 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
               <div className="help-text">
                 <em>
                   <Typography variant="body1" align="center" color="textSecondary">
-                    First time bonding <b>{displayName}</b>? <br /> Please approve NOVA Dao to use your{" "}
+                    First time bonding <b>{displayName}</b>? <br /> Please approve Hector Dao to use your{" "}
                     <b>{displayName}</b> for bonding.
                   </Typography>
                 </em>
@@ -251,14 +262,27 @@ function BondPurchase({ bond, slippage, recipientAddress }) {
 
           <div className="data-row">
             <Typography>ROI</Typography>
-            <Typography>
-              {isSoldOut ? (
-                "--"
-              ) : (
-                <>{isBondLoading ? <Skeleton width="100px" /> : `${trim(bond.bondDiscount * 100, 4) || "0"} %`}</>
+            <Typography align="right">
+              {isSoldOut ? "--" : <>{isBondLoading ? <Skeleton width="100px" /> : `${trim(discount, 4) || "0"} %`}</>}
+              {bond.isFour && !isBondLoading && (
+                <Typography variant="body2" style={{ color: "#ff9900", fontSize: "11px", paddingTop: "4px" }}>
+                  ({trim(stakingRebasePercentage, 2)}% from Rebase INCLUDED)
+                </Typography>
               )}
             </Typography>
           </div>
+          {bond.isFour && (
+            <div className="data-row">
+              <Typography>Purchase Discount</Typography>
+              <Typography align="right">
+                {isSoldOut ? (
+                  "--"
+                ) : (
+                  <>{isBondLoading ? <Skeleton width="100px" /> : `${trim(bond.bondDiscount * 100, 4) || "0"} %`}</>
+                )}
+              </Typography>
+            </div>
+          )}
 
           <div className="data-row">
             <Typography>Debt Ratio</Typography>

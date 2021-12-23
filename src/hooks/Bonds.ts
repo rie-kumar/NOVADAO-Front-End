@@ -21,7 +21,6 @@ interface IBondingStateView {
 interface IAllBondData extends Bond, IBondDetails, IUserBondDetails {}
 
 const initialBondArray = allBonds;
-
 // Slaps together bond data within the account & bonding states
 function useBonds() {
   const bondLoading = useSelector((state: IBondingStateView) => !state.bonding.loading);

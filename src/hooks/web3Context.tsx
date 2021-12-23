@@ -6,6 +6,7 @@ import { IFrameEthereumProvider } from "@ledgerhq/iframe-provider";
 import { EnvHelper } from "../helpers/Environment";
 import { NodeHelper } from "src/helpers/NodeHelper";
 import { error } from "src/slices/MessagesSlice";
+import { DEFAULT_NETWORK, messages } from "src/constants";
 
 /**
  * kept as function to mimic `getMainnetURI()`
@@ -35,16 +36,31 @@ function getMainnetURI(): string {
   return allURIs[randomIndex];
 }
 
+function getScanner(chainId: number): string {
+  switch (chainId) {
+    case DEFAULT_NETWORK: {
+      return "https://snowtrace.io";
+    }
+    default: {
+      return "https://snowtrace.io";
+    }
+  }
+}
+
 /*
   Types
 */
 type onChainProvider = {
   connect: () => void;
   disconnect: () => void;
+  checkWrongNetwork: () => Promise<boolean>;
   provider: JsonRpcProvider;
   address: string;
   connected: Boolean;
   web3Modal: Web3Modal;
+  chainID: number;
+  vchainID: number;
+  scanner?: string;
 };
 
 export type Web3ContextData = {
@@ -75,7 +91,8 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
   const [connected, setConnected] = useState(false);
   // NOTE (appleseed): if you are testing on rinkeby you need to set chainId === 4 as the default for non-connected wallet testing...
   // ... you also need to set getTestnetURI() as the default uri state below
-  const [chainID, setChainID] = useState(43114);
+  const [chainID, setChainID] = useState(DEFAULT_NETWORK);
+  const [vchainID, setVChain] = useState(DEFAULT_NETWORK);
   const [address, setAddress] = useState("");
 
   const [uri, setUri] = useState(getMainnetURI());
@@ -84,15 +101,21 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
 
   const [web3Modal, setWeb3Modal] = useState<Web3Modal>(
     new Web3Modal({
-      // network: "mainnet", // optional
       cacheProvider: true, // optional
       providerOptions: {
         walletconnect: {
           package: WalletConnectProvider,
           options: {
             rpc: {
-              43114: getMainnetURI(),
+              DEFAULT_NETWORK: getMainnetURI(),
             },
+            qrcode: true,
+            qrcodeModalOptions: {
+              mobileLinks: [
+                "metamask",
+                "trust",
+              ]
+            }
           },
         },
       },
@@ -119,6 +142,7 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
 
       rawProvider.on("chainChanged", async (chain: number) => {
         _checkNetwork(chain);
+        setVChain(chain);
         setTimeout(() => window.location.reload(), 1);
       });
 
@@ -136,9 +160,9 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
   const _checkNetwork = (otherChainID: number): Boolean => {
     if (chainID !== otherChainID) {
       console.warn("You are switching networks");
-      if (otherChainID === 43114) {
+      if (otherChainID === DEFAULT_NETWORK) {
         setChainID(otherChainID);
-        otherChainID === 43114 ? setUri(getMainnetURI()) : setUri(getTestnetURI());
+        otherChainID === DEFAULT_NETWORK ? setUri(getMainnetURI()) : setUri(getTestnetURI());
         return true;
       }
       return false;
@@ -161,6 +185,7 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
     _initListeners(rawProvider);
     const connectedProvider = new Web3Provider(rawProvider, "any");
     const chainId = await connectedProvider.getNetwork().then(network => network.chainId);
+    setVChain(chainId);
     const connectedAddress = await connectedProvider.getSigner().getAddress();
     const validNetwork = _checkNetwork(chainId);
     if (!validNetwork) {
@@ -179,6 +204,15 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
     return connectedProvider;
   }, [provider, web3Modal, connected]);
 
+  const checkWrongNetwork = async (): Promise<boolean> => {
+    const chainId = await provider.getNetwork().then(network => network.chainId);
+    setVChain(chainId);
+    if (chainId == DEFAULT_NETWORK) {
+      return false;
+    }
+    return true;
+  };
+
   const disconnect = useCallback(async () => {
     console.log("disconnecting");
     web3Modal.clearCachedProvider();
@@ -190,8 +224,9 @@ export const Web3ContextProvider: React.FC<{ children: ReactElement }> = ({ chil
   }, [provider, web3Modal, connected]);
 
   const onChainProvider = useMemo(
-    () => ({ connect, disconnect, hasCachedProvider, provider, connected, address, chainID, web3Modal, uri }),
-    [connect, disconnect, hasCachedProvider, provider, connected, address, chainID, web3Modal, uri],
+
+    () => ({ connect, disconnect, hasCachedProvider, provider, connected, address, chainID, vchainID, web3Modal, uri, checkWrongNetwork, }),
+    [connect, disconnect, hasCachedProvider, provider, connected, address, chainID, vchainID, web3Modal, uri, checkWrongNetwork],
   );
 
   useEffect(() => {
